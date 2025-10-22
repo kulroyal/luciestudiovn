@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Giá Tương Tác - LUCIE STUDIO</title>
+    <!-- Placeholder Comments -->
+    <!-- Chosen Palette: High-Contrast Luxury (Background: White/Cream, Main Text: Black/Dark Gray, Accent: Gold/Brass #B8860B) -->
+    <!-- Application Structure Plan: Redesigned into a multi-view SPA controlled by the navigation bar (tabs). The Gallery view is enhanced with dynamic category tabs (filters) based on photo filenames to improve performance and user experience when dealing with a large volume of images. -->
+    <!-- Visualization & Content Choices: 1) Gallery -> Goal: Showcase Quality/Inspire -> Presentation: Dynamic Category Filter + Image Grid + Lightbox/Modal. -> Interaction: User clicks category tabs to instantly filter the displayed images, and clicks on an image to open the lightbox. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Thiết lập font Playfair Display (Serif cho tiêu đề) và Be Vietnam Pro (Sans-serif cho nội dung) -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #F8F7F4; /* Light Cream Background */
+            color: #1F2937; /* Dark text */
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            color: #1F2937;
+        }
+        .text-brand-dark { color: #1F2937; }
+        .bg-brand-dark { background-color: #1F2937; }
+        .text-accent { color: #B8860B; } /* Dark Gold/Brass Accent */
+        .bg-accent { background-color: #B8860B; }
+        .border-accent { border-color: #B8860B; }
+        .bg-card { background-color: #FFFFFF; }
+        /* Tinh chỉnh đổ bóng để trông tinh tế hơn */
+        .shadow-custom { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); } 
+        .shadow-custom-hover:hover { box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); transition: box-shadow 0.3s ease-in-out; }
+
+        /* Chart container styling as per requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .feature-item {
+            list-style-type: none;
+            display: flex;
+            align-items: flex-start;
+        }
+        /* Scroll Reveal Effect Styling */
+        .scroll-reveal-element {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .scroll-reveal-element.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #B8860B;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        /* Tab specific styling */
+        .nav-link.active {
+            color: #1F2937;
+            border-bottom: 3px solid #B8860B; /* Accent line for active tab */
+            padding-bottom: 4px;
+            font-weight: 600;
+        }
+        .content-view {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .content-view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Responsive video container for 16:9 aspect ratio */
+        .video-responsive {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            border-radius: 12px;
+        }
+        .video-responsive iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        /* Style cho nút bấm liên hệ nổi bật */
+        .btn-accent {
+            background-color: #B8860B;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 9999px;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(184, 134, 11, 0.4);
+            transition: all 0.3s;
+        }
+        .btn-accent:hover {
+            background-color: #a37b0a;
+            box-shadow: 0 6px 15px rgba(184, 134, 11, 0.6);
+        }
+
+        /* Nút chọn gói chuyên nghiệp */
+        .package-selector-button {
+            transition: all 0.2s;
+            border: 1px solid #E5E7EB;
+            font-weight: 500;
+            color: #4B5563;
+        }
+        .package-selector-button.active {
+            background-color: #B8860B;
+            color: white;
+            border-color: #B8860B;
+            box-shadow: 0 2px 5px rgba(184, 134, 11, 0.3);
+        }
+        .package-selector-button:hover:not(.active) {
+            background-color: #F3F4F6;
+            color: #1F2937;
+        }
+        
+        /* Modal (Lightbox) Styling */
+        #imageModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        #modalContent {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+            text-align: center;
+        }
+        #modalImage {
+            display: block;
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        #modalCaption {
+            color: white;
+            padding: 10px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+        }
+        #closeModal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 1001;
+            transition: color 0.2s;
+        }
+        #closeModal:hover {
+            color: #B8860B;
+        }
+
+        /* Gallery Filter Buttons */
+        .gallery-filter-button {
+            transition: all 0.2s;
+            font-weight: 500;
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            background-color: #E5E7EB;
+            color: #4B5563;
+            cursor: pointer;
+        }
+        .gallery-filter-button.active {
+            background-color: #B8860B;
+            color: white;
+            font-weight: 600;
+        }
+        .gallery-filter-button:hover:not(.active) {
+            background-color: #D1D5DB;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Modal (Lightbox) Structure -->
+    <div id="imageModal" onclick="closeModal()">
+        <span id="closeModal" title="Đóng">&times;</span>
+        <div id="modalContent" onclick="event.stopPropagation()">
+            <img id="modalImage" src="" alt="Ảnh Cưới Chi Tiết">
+            <div id="modalCaption"></div>
+        </div>
+    </div>
+    <!-- End Modal -->
+
+    <!-- Header & Tab Controller -->
+    <header class="bg-card shadow-custom sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-4xl font-extrabold text-brand-dark tracking-wide transition duration-300 hover:text-accent" style="font-family: 'Playfair Display', serif;">LUCIE STUDIO</h1>
+            <nav id="mainNav" class="hidden md:flex space-x-8 text-gray-700 font-medium">
+                <a href="#" data-view="view-details" class="nav-link transition duration-150 active" onclick="switchView('view-details')">Chi Tiết Gói</a>
+                <a href="#" data-view="view-comparison" class="nav-link transition duration-150" onclick="switchView('view-comparison')">Bảng So Sánh</a>
+                <a href="#" data-view="view-gallery" class="nav-link transition duration-150" onclick="switchView('view-gallery')">Album & Video</a>
+                <a href="#" data-view="view-event-film" class="nav-link transition duration-150" onclick="switchView('view-event-film')">Phóng Sự & Film</a>
+                <a href="#" data-view="view-printing" class="nav-link transition duration-150" onclick="switchView('view-printing')">Báo Giá In Ảnh</a>
+                <a href="#contact" data-view="view-contact" class="nav-link transition duration-150">Liên Hệ</a>
+            </nav>
+            <!-- Mobile Menu Placeholder -->
+        </div>
+    </header>
+
+    <!-- Main Application Body -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Introduction Section (Hero) -->
+        <section class="text-center mb-16 scroll-reveal-element">
+            <h2 class="text-5xl md:text-6xl font-extrabold text-brand-dark mb-4">Lựa Chọn Sự Sang Trọng & Hoàn Hảo</h2>
+            <p class="text-xl text-gray-600 max-w-4xl mx-auto">Tận hưởng dịch vụ cưới đẳng cấp, nơi mỗi khoảnh khắc được ghi lại với sự tinh tế tuyệt đối. Khám phá các gói dịch vụ độc quyền của chúng tôi.</p>
+             <div class="mt-8 mx-auto w-20 h-0.5 bg-accent"></div> <!-- Dải phân cách tinh tế -->
+        </section>
+
+        <!-- Dynamic Content Wrapper -->
+        <div id="contentWrapper" class="space-y-12">
+
+            <!-- 1. VIEW: CHI TIẾT GÓI (Default/Focus) -->
+            <section id="view-details" class="content-view active scroll-reveal-element">
+                <h3 class="text-3xl font-bold text-brand-dark mb-8 text-center">CHI TIẾT TRỌN GÓI DỊCH VỤ ĐƯỢC LỰA CHỌN</h3>
+                
+                <!-- NEW: Professional Package Selector -->
+                <div class="bg-card p-6 rounded-2xl shadow-custom mb-8 border-t-4 border-accent">
+                    <h4 class="text-xl font-semibold text-brand-dark mb-4 border-b pb-2">Chọn Gói Cần Xem Chi Tiết</h4>
+                    
+                    <p class="text-sm font-medium text-gray-700 mb-2">Gói Chụp Ảnh Cưới (Pre-Wedding - LUCIE)</p>
+                    <div id="packageButtonsLucie" class="flex flex-wrap gap-2 mb-4">
+                        <!-- Buttons generated by JS -->
+                    </div>
+
+                    <p class="text-sm font-medium text-gray-700 mt-4 mb-2">Gói Combo Trọn Gói (Pre-Wedding + Ngày Cưới - PACKCOMBO)</p>
+                    <div id="packageButtonsCombo" class="flex flex-wrap gap-2">
+                        <!-- Buttons generated by JS -->
+                    </div>
+                </div>
+                <!-- END NEW: Professional Package Selector -->
+
+                <div id="packageDetailPanel" class="bg-card p-6 sm:p-8 rounded-2xl shadow-custom min-h-[200px] transition-all duration-500 shadow-custom-hover border-t-4 border-accent">
+                    <!-- Content generated by JS -->
+                    <p class="text-center text-gray-500 py-10">Vui lòng chọn một gói từ dải nút phía trên để xem chi tiết đầy đủ.</p>
+                </div>
+            </section>
+            
+            <!-- 2. VIEW: BẢNG SO SÁNH (Price Chart & Comparison Tool) -->
+            <section id="view-comparison" class="content-view scroll-reveal-element">
+                <h3 class="text-3xl font-bold text-brand-dark mb-8 text-center">PHÂN TÍCH VÀ SO SÁNH TRỰC QUAN CÁC GÓI LUCIE</h3>
+                
+                <!-- Price Overview Chart -->
+                <div>
+                    <h4 class="text-xl font-semibold text-brand-dark mb-2 border-b pb-2 border-accent">Biểu Đồ So Sánh Giá Các Gói Pre-Wedding (LUCIE)</h4>
+                    <p class="text-gray-600 mb-4">Nhấp vào một cột để xem chi tiết đầy đủ của gói đó trong Tab "Chi Tiết Gói".</p>
+                    <div class="bg-card p-4 sm:p-6 rounded-2xl shadow-custom transition duration-300 shadow-custom-hover border-t-4 border-accent">
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature Comparison Tool -->
+                <div class="mt-12">
+                    <h4 class="text-xl font-semibold text-brand-dark mb-2 border-b pb-2 border-accent">Công Cụ So Sánh Trực Tiếp (LUCIE & COMBO)</h4>
+                    <p class="text-gray-600 mb-6">Chọn tối đa 3 gói để xem xét các quyền lợi cạnh nhau.</p>
+                    <div class="bg-card p-4 sm:p-6 rounded-2xl shadow-custom transition duration-300 shadow-custom-hover border-t-4 border-accent">
+                        <!-- Selectors -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                            <div>
+                                <label for="packageSelect1" class="block text-sm font-medium text-gray-700 mb-1">Gói So Sánh 1</label>
+                                <select id="packageSelect1" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-accent focus:ring-accent p-2 transition duration-150"></select>
+                            </div>
+                            <div>
+                                <label for="packageSelect2" class="block text-sm font-medium text-gray-700 mb-1">Gói So Sánh 2</label>
+                                <select id="packageSelect2" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-accent focus:ring-accent p-2 transition duration-150"></select>
+                            </div>
+                            <div>
+                                <label for="packageSelect3" class="block text-sm font-medium text-gray-700 mb-1">Gói So Sánh 3</label>
+                                <select id="packageSelect3" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-accent focus:ring-accent p-2 transition duration-150"></select>
+                            </div>
+                        </div>
+                        <!-- Comparison Table -->
+                        <div id="comparisonTable" class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <!-- Content generated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. VIEW: ALBUM & VIDEO GALLERY -->
+            <section id="view-gallery" class="content-view scroll-reveal-element">
+                <h3 class="text-3xl font-bold text-brand-dark mb-8 text-center">ALBUM ẢNH & VIDEO CƯỚI</h3>
+                
+                <!-- Video Cưới (YouTube Embed) -->
+                <div class="mb-12">
+                    <h4 class="text-2xl font-semibold text-brand-dark mb-4 border-b pb-2 border-accent">VIDEO CƯỚI (PHÓNG SỰ & PRE-WEDDING)</h4>
+                    <p class="text-gray-600 mb-4">Các video ấn tượng được thực hiện bởi đội ngũ Lucie Studio.</p>
+                    <div class="bg-card p-4 rounded-xl shadow-custom">
+                        <!-- SỬA LỖI VIDEO: Loại bỏ các tham số thừa, chỉ giữ lại mã video cơ bản -->
+                        <div class="video-responsive">
+                            <iframe width="560" height="315" src="https://www.youtube.com/embed/6zdlWn9lGVE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ảnh Cưới Pre-Wedding -->
+                <div class="mb-12">
+                    <h4 class="text-2xl font-semibold text-brand-dark mb-4 border-b pb-2 border-accent">ALBUM ẢNH CƯỚI (PRE-WEDDING)</h4>
+                    
+                    <!-- NEW: Gallery Filters -->
+                    <div id="galleryFilters" class="flex flex-wrap gap-3 mb-6 justify-center">
+                        <!-- Filter buttons generated by JS -->
+                    </div>
+                    
+                    <div id="prewedding-gallery" class="image-grid-prewedding grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Images generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Ảnh Phóng Sự Cưới -->
+                <div class="mb-12">
+                    <h4 class="text-2xl font-semibold text-brand-dark mb-4 border-b pb-2 border-accent">ALBUM ẢNH PHÓNG SỰ CƯỚI</h4>
+                    <p class="text-gray-600 italic mb-4 p-3 bg-gray-100 rounded-lg font-medium border border-gray-200">
+                        **Thông báo:** Hiện tại chưa có ảnh Phóng Sự Cưới được cập nhật. Toàn bộ ảnh đang hiển thị đều thuộc Album Ảnh Cưới (Pre-Wedding).
+                    </p>
+                    <div id="event-gallery" class="image-grid-event grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Images generated by JS -->
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- 4. VIEW: DỊCH VỤ NGÀY CƯỚI RIÊNG LẺ & FILM (Static but Styled) -->
+            <section id="view-event-film" class="content-view scroll-reveal-element">
+                <h3 class="text-3xl font-bold text-brand-dark mb-8 text-center">DỊCH VỤ NGÀY CƯỚI RIÊNG LẺ & FILM (PHÓNG SỰ)</h3>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Chụp Phóng Sự (Staff) -->
+                    <div class="bg-card p-6 rounded-2xl shadow-custom scroll-reveal-element shadow-custom-hover border-t-4 border-accent">
+                        <h4 class="text-xl font-semibold text-brand-dark mb-3">CHỤP PHÓNG SỰ (STAFF)</h4>
+                        <ul class="space-y-3 text-gray-700 text-sm">
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 1:</span> 3.500.000₫ (1 Máy Ăn Hỏi + 1 Máy Ngày Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 2:</span> 4.500.000₫ (2 Máy Ăn Hỏi + 1 Máy Ngày Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 3:</span> 5.500.000₫ (2 Máy Ăn Hỏi + 2 Máy Ngày Cưới)</li>
+                            <li class="text-xs mt-4 p-2 bg-gray-50 rounded-md text-red-500">Lưu ý: Áp dụng trong nội thành Tây TP Hải Phòng.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Chụp Phóng Sự (Leader) -->
+                    <div class="bg-card p-6 rounded-2xl shadow-custom scroll-reveal-element shadow-custom-hover border-t-4 border-accent">
+                        <h4 class="text-xl font-semibold text-brand-dark mb-3">CHỤP PHÓNG SỰ (LEADER LUCIE STUDIO)</h4>
+                        <ul class="space-y-3 text-gray-700 text-sm">
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 1:</span> 4.500.000₫ (1 Máy Ăn Hỏi + 1 Máy Ngày Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 2:</span> 5.500.000₫ (2 Máy Ăn Hỏi + 1 Máy Ngày Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 3:</span> 6.500.000₫ (2 Máy Ăn Hỏi + 2 Máy Ngày Cưới)</li>
+                            <li class="text-xs mt-4 p-2 bg-gray-50 rounded-md text-gray-600">Sản phẩm: Chụp không giới hạn file, Trả toàn bộ file đã blend màu.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Quay Phóng Sự -->
+                    <div class="bg-card p-6 rounded-2xl shadow-custom scroll-reveal-element shadow-custom-hover border-t-4 border-accent">
+                        <h4 class="text-xl font-semibold text-brand-dark mb-3">QUAY PHÓNG SỰ (FILM)</h4>
+                        <ul class="space-y-3 text-gray-700 text-sm">
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 1:</span> 6.500.000₫ (1 Máy Quay Ăn Hỏi + 1 Máy Quay Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 2:</span> 9.500.000₫ (2 Máy Quay Ăn Hỏi + 1 Máy Quay Cưới)</li>
+                            <li class="feature-item"><span class="font-bold mr-2 text-brand-dark">GÓI 3:</span> 12.500.000₫ (2 Máy Quay Ăn Hỏi + 2 Máy Quay Cưới)</li>
+                            <li class="text-xs mt-4 p-2 bg-gray-50 rounded-md text-gray-600">Ưu đãi: Tặng 50 ảnh rửa 13x18 ép Plastic, Tặng Album đựng ảnh.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- 5. VIEW: BẢNG GIÁ IN PHÓNG ẢNH (Responsive Tables) -->
+            <section id="view-printing" class="content-view scroll-reveal-element">
+                <h3 class="text-3xl font-bold text-brand-dark mb-8 text-center">BẢNG GIÁ IN PHÓNG ẢNH</h3>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Table 1: Ảnh In Thường -->
+                    <div class="bg-card p-6 rounded-2xl shadow-custom overflow-x-auto shadow-custom-hover">
+                        <h4 class="text-xl font-semibold text-brand-dark mb-4 border-b pb-2 border-accent">ẢNH IN THƯỜNG (Giá tính bằng VND)</h4>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 text-brand-dark">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Size ảnh</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Ảnh in</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">UV</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider">Lụa</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
+                                <tr><td class="px-6 py-3 whitespace-nowrap">9x12</td><td>2.000</td><td>2.500</td><td>3.000</td></tr>
+                                <tr><td class="px-6 py-3 whitespace-nowrap">10x15</td><td>2.500</td><td>3.000</td><td>3.500</td></tr>
+                                <tr><td class="px-6 py-3 whitespace-nowrap">13x18</td><td>5.000</td><td>5.500</td><td>6.000</td></tr>
+                                <tr><td class="px-6 py-3 whitespace-nowrap">15x21</td><td>7.000</td><td>8.000</td><td>9.000</td></tr>
+                                <tr><td class="px-6 py-3 whitespace-nowrap">20x25</td><td>15.000</td><td>18.000</td><td>20.000</td></tr>
+                                <tr><td class="px-6 py-3 whitespace-nowrap">20x30</td><td>20.000</td><td>28.000</td><td>35.000</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table 2: Ảnh Ép Gỗ -->
+                    <div class="bg-card p-6 rounded-2xl shadow-custom overflow-x-auto shadow-custom-hover">
+                        <h4 class="text-xl font-semibold text-brand-dark mb-4 border-b pb-2 border-accent">ẢNH ÉP GỖ (Giá tính bằng VND)</h4>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 text-brand-dark">
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">SIZE</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">CÁN BÓNG</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">TRÁNG GƯƠNG</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">MECA HD</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider">LED ĐIỆN</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
+                                <tr><td class="px-3 py-2 whitespace-nowrap">15x21</td><td>120K</td><td>-</td><td>-</td><td>-</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">20x30</td><td>200K</td><td>300K</td><td>400K</td><td>-</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">30x45</td><td>400K</td><td>600K</td><td>900K</td><td>-</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">40x60</td><td>600K</td><td>850K</td><td>1.5M</td><td>3.0M</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">60x90</td><td>1.0M</td><td>1.5M</td><td>2.5M</td><td>7.0M</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">80x120</td><td>3.0M</td><td>3.5M</td><td>6.0M</td><td>14.0M</td></tr>
+                                <tr><td class="px-3 py-2 whitespace-nowrap">120x180</td><td>6.0M</td><td>9.0M</td><td>10.0M</td><td>24.0M</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- Contact Section (Static at bottom) -->
+        <section id="contact" class="mt-16 bg-brand-dark rounded-3xl p-10 sm:p-16 text-center scroll-reveal-element">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4">Sẵn Sàng Ghi Lại Khoảnh Khắc Của Bạn?</h2>
+            <p class="text-lg text-gray-300 mb-8">Chúng tôi luôn sẵn lòng tư vấn để giúp bạn chọn được gói dịch vụ ưng ý nhất.</p>
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                <a href="tel:0989599292" class="btn-accent transition duration-300">
+                    GỌI NGAY: 098.959.9292
+                </a>
+                <a href="#" class="w-full sm:w-auto bg-white text-brand-dark font-bold py-3 px-8 rounded-full shadow-md hover:bg-gray-100 transition duration-150">
+                    NHẮN TIN TƯ VẤN
+                </a>
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>&copy; 2025 LUCIE STUDIO. All Rights Reserved.</p>
+            <p class="mt-1 text-gray-400">Địa chỉ: 174 Bà Triệu, TP Hải Dương | Hotline: 0826.226.888</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA ẢNH (PHOTOS DATA) ---
+        // HƯỚNG DẪN: Dán URL ảnh công khai vào các mảng dưới đây.
+        // Gói LUCIE VIP có thể sử dụng ảnh chất lượng cao để trưng bày.
+        
+        // Tất cả 90 URL TRỰC TIẾP đã được cung cấp
+        const rawImageUrls = [
+            "https://i.ibb.co/67KPvBw9/AODAI9.jpg", "https://i.ibb.co/20vfccd7/AODAI10.jpg", "https://i.ibb.co/hTfhc5B/CHILINH1.jpg", 
+            "https://i.ibb.co/qMymn3ZN/CHILINH2.jpg", "https://i.ibb.co/yBd3t1pV/CHILINH3.jpg", "https://i.ibb.co/v4bQ1Q3s/CHILINH4.jpg", 
+            "https://i.ibb.co/gZBNQQQG/CHILINH5.jpg", "https://i.ibb.co/yBVYmMmH/CHILINH6.jpg", "https://i.ibb.co/rfsLHXSd/CHILINH7.jpg", 
+            "https://i.ibb.co/1JG4W97x/CHILINH8.jpg", "https://i.ibb.co/KcxpBJ6V/CHILINH9.jpg", "https://i.ibb.co/jvd0wbFb/CHILINH10.jpg", 
+            "https://i.ibb.co/yFVTnqqf/CONCEPT1.jpg", "https://i.ibb.co/4gnJtJ2y/CONCEPT2.jpg", "https://i.ibb.co/57pYLLb/CONCEPT3.jpg", 
+            "https://i.ibb.co/BH8Nkgfq/CONCEPT4.jpg", "https://i.ibb.co/HfSjnqq9/CONCEPT5.jpg", "https://i.ibb.co/mCX64BdN/CONCEPT6.jpg", 
+            "https://i.ibb.co/KzzVH8kD/CONCEPT7.jpg", "https://i.ibb.co/NgZXNp9x/CONCEPT8.jpg", "https://i.ibb.co/Gv8xbWDs/CONCEPT9.jpg", 
+            "https://i.ibb.co/99Gzh3Kc/CONCEPT10.jpg", "https://i.ibb.co/2Y53TMp3/CONCEPT11.jpg", "https://i.ibb.co/mm4H51W/CONCEPT12.jpg", 
+            "https://i.ibb.co/84bLDy5d/DANGOAI1.jpg", "https://i.ibb.co/GfF6CwWJ/DANGOAI2.jpg", "https://i.ibb.co/mCvxBzZz/DANGOAI4.jpg", 
+            "https://i.ibb.co/7J5Sz0t5/DANGOAI5.jpg", "https://i.ibb.co/CKR1dbtn/DANGOAI6.jpg", "https://i.ibb.co/v6MgzNFJ/DANGOAI9.jpg", 
+            "https://i.ibb.co/nNSRcBPn/DANGOAI10.jpg", "https://i.ibb.co/CszWMTmW/HDCAFE1.jpg", "https://i.ibb.co/Dfg5B891/HDCAFE2.jpg", 
+            "https://i.ibb.co/FkJfgrdm/HDCAFE3.jpg", "https://i.ibb.co/fzNMRZ6H/HDCAFE4.jpg", "https://i.ibb.co/LD2qn6xD/HDCAFE5.jpg", 
+            "https://i.ibb.co/C3JhqK7X/HDCAFE6.jpg", "https://i.ibb.co/yF9WrYgk/HDCAFE7.jpg", "https://i.ibb.co/j98nbSY9/HDCAFE8.jpg", 
+            "https://i.ibb.co/SwSVD5V8/HDCAFE9.jpg", "https://i.ibb.co/0yvBrCbL/HDNGOAITROI1.jpg", "https://i.ibb.co/3m8nFxGD/HDNGOAITROI2.jpg", 
+            "https://i.ibb.co/WvGp8dmY/HDNGOAITROI3.jpg", "https://i.ibb.co/zWWzs6VM/HDNGOAITROI4.jpg", "https://i.ibb.co/7J0f3W4H/HDNGOAITROI5.jpg", 
+            "https://i.ibb.co/gZ3yTS79/HDNGOAITROI6.jpg", "https://i.ibb.co/QFTZD87W/HDNGOAITROI7.jpg", "https://i.ibb.co/nq8sJ4CY/HDNGOAITROI8.jpg", 
+            "https://i.ibb.co/8n7G63P2/HDNGOAITROI9.jpg", "https://i.ibb.co/pvMnnv8F/HDNGOAITROI10.jpg", "https://i.ibb.co/rqwCHS3/HDNGOAITROI11.jpg", 
+            "https://i.ibb.co/RpG1hqJf/HDNGOAITROI12.jpg", "https://i.ibb.co/M5kXLb77/HDNGOAITROI13.jpg", "https://i.ibb.co/qK2GJfz/LUX1.jpg", 
+            "https://i.ibb.co/x8qLZbRt/LUX2.jpg", "https://i.ibb.co/mVBQN8T3/LUX3.jpg", "https://i.ibb.co/9kRkF9f5/LUX4.jpg", 
+            "https://i.ibb.co/wFsYKd6d/LUX5.jpg", "https://i.ibb.co/67Z8q37N/LUX6.jpg", "https://i.ibb.co/VcxHgRj5/PHIMTRUONGHD1.jpg", 
+            "https://i.ibb.co/jk9JVvw8/PHIMTRUONGHD2.jpg", "https://i.ibb.co/7DXVzR4/PHIMTRUONGHD3.jpg", "https://i.ibb.co/KC3MJg5/PHIMTRUONGHD4.jpg", 
+            "https://i.ibb.co/6JGFhCrS/PHIMTRUONGHD5.jpg", "https://i.ibb.co/TBGk6Q8p/PHIMTRUONGHD6.jpg", "https://i.ibb.co/20wnphtf/PHIMTRUONGHD7.jpg", 
+            "https://i.ibb.co/YT3d6N1D/PHIMTRUONGHD8.jpg", "https://i.ibb.co/7thc8n00/PHIMTRUONGHD9.jpg", "https://i.ibb.co/XnY9S2R/PHIMTRUONGHD10.jpg", 
+            "https://i.ibb.co/RTJVWWP5/PHIMTRUONGHD11.jpg", "https://i.ibb.co/bg4dH4qp/STUDIOS1.jpg", "https://i.ibb.co/rRnQRy8g/STUDIOS2.jpg", 
+            "https://i.ibb.co/pBfRvWvQ/STUDIOS3.jpg", "https://i.ibb.co/NnVk3Y03/STUDIOS4.jpg", "https://i.ibb.co/bjp9zW2y/STUDIOS5.jpg", 
+            "https://i.ibb.co/3Yycsmbc/STUDIOS6.jpg", "https://i.ibb.co/p6txHKFc/STUDIOS7.jpg", "https://i.ibb.co/VWjLtR8k/STUDIOS8.jpg", 
+            "https://i.ibb.co/TGPBX57/STUDIOS9.jpg", "https://i.ibb.co/b5FzV9Lv/STUDIOS10.jpg", "https://i.ibb.co/6cZwTkqj/STUDIOS11.jpg", 
+            "https://i.ibb.co/WNVxMfYL/STUDIOS12.jpg", "https://i.ibb.co/cS3N6FND/STUDIOS13.jpg", "https://i.ibb.co/f38q7LC/STUDIOS14.jpg", 
+            "https://i.ibb.co/21WH8vmW/STUDIOS15.jpg", "https://i.ibb.co/JRY31VBF/STUDIOS16.jpg", "https://i.ibb.co/HTjwX2SX/STUDIOS17.jpg", 
+            "https://i.ibb.co/GQ1Y6qrT/STUDIOS18.jpg", "https://i.ibb.co/fGYPZtRk/STUDIOS19.jpg", "https://i.ibb.co/RGPqkvtm/STUDIOS20.jpg", 
+            "https://i.ibb.co/HfSyL8LP/STUDIOS21.jpg"
+        ];
+        
+        // CẬP NHẬT: Tất cả 90 URL đều là ảnh Pre-Wedding, mảng Event là trống.
+        const preweddingImageUrls = rawImageUrls;
+        const eventImageUrls = [];
+
+
+        const packageData = [
+            { id: 'lucie1', name: 'LUCIE 1', price: 3500000, 
+              location_details: ['STUDIO LUCIE'], 
+              product_details: ['01 Ảnh khung 60x90', '01 Ảnh để bàn 20x30 ép gỗ', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['01 vest tự chọn', '01 váy cưới tự chọn', 'Trang Điểm, làm tóc CD-CR', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['Không áp dụng Dịch vụ ngày cưới.'],
+              comp_location: 'Studio Lucie',
+              comp_frame: '1 Khung 60x90',
+              comp_album: 'Không Album',
+              comp_video: 'Không Video',
+              comp_shoot_outfits: '1 Vest, 1 Váy Cưới',
+              comp_wedding_level: 'Không'
+            },
+            { id: 'lucie2', name: 'LUCIE 2', price: 5800000, 
+              location_details: ['STUDIO LUCIE'], 
+              product_details: ['02 Ảnh khung 60x90 (Ảnh Gương)', '01 Ảnh để bàn 20x30 ép gỗ', '02 Ảnh Khung', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['01 vest tự chọn', '01 váy cưới tự chọn', 'Trang Điểm, làm tóc CD-CR', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy, 01 vest', 'Áo dài Dâu', 'Make up nội thành 4km.'],
+              comp_location: 'Studio Lucie',
+              comp_frame: '2 Khung 60x90 Gương',
+              comp_album: 'Không Album',
+              comp_video: 'Không Video',
+              comp_shoot_outfits: '1 Vest, 1 Váy Cưới',
+              comp_wedding_level: '01 Váy, 01 Vest, Áo dài Dâu. Make up 4km.'
+            },
+            { id: 'lucie3', name: 'LUCIE 3', price: 6800000, 
+              location_details: ['STUDIO LUCIE'], 
+              product_details: ['02 Ảnh khung 60x90 (Gương)', '01 Ảnh để bàn 20x30 ép gỗ', 'Album 20x30 10 Trang', '01 slide ảnh', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['01 vest tự chọn', '01 váy cưới tự chọn', '01 Váy Phi tự chọn', 'Makeup làm tóc ngày chụp', '1 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy, 01 vest', 'Áo dài Dâu', 'Áo dài đô lẻ nữ Nơ/caravat đội đô lẻ nam', 'Make up nội thành 4km (có make up ngoại thành).'],
+              comp_location: 'Studio Lucie',
+              comp_frame: '2 Khung 60x90 Gương',
+              comp_album: 'Album 20x30 (10 Trang)',
+              comp_video: 'Video Slide',
+              comp_shoot_outfits: '1 Vest, 1 Váy Cưới, 1 Váy Phi',
+              comp_wedding_level: '01 Váy, 01 Vest, Áo dài Dâu. Make up 4km.'
+            },
+            { id: 'lucie4', name: 'LUCIE 4', price: 7900000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường HD', 'Ngoại cảnh nội thành HD (Miễn phí xe).'], 
+              product_details: ['02 Ảnh khung 60x90 tráng gương bo góc', '01 Ảnh để bàn 20x30 ép gỗ', 'Album 20x30 15 Trang', '01 Video slide ảnh 4K', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['02 vest tự chọn', '02 váy cưới tự chọn', '01 Váy Phi tự chọn', 'Makeup làm tóc ngày chụp', '1 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy, 01 vest', 'Áo dài CD', 'Áo dài đỏ lẻ nữ Nơ/caravat đội đô lẻ nam', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh Nội thành HD (Miễn phí xe)',
+              comp_frame: '2 Khung 60x90 Tráng Gương',
+              comp_album: 'Album 20x30 (15 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 2 Váy Cưới, 1 Váy Phi',
+              comp_wedding_level: '01 Váy, 01 Vest, Áo dài CD. Make up Ăn Hỏi + Cưới (10km free).'
+            },
+            { id: 'lucie5', name: 'LUCIE 5', price: 8800000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường HD', 'Ngoại cảnh Chí Linh/Côn Sơn (Miễn phí xe).'], 
+              product_details: ['02 Ảnh khung 60x90 meka HD', '01 Ảnh để bàn 20x30 ép gỗ', 'Album 20x30 15 Trang', '01 Video slide ảnh 4K', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['02 vest tự chọn', '02 váy cưới tự chọn', '01 Váy cao cấp', 'Makeup làm tóc ngày chụp', '1 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy cao cấp, 01 vest, Nơ/caravat chú rể', 'Áo dài cặp CD&CR', 'Áo dài đỏ lẻ nam - nữ', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh Chí Linh/Côn Sơn (Miễn phí xe)',
+              comp_frame: '2 Khung 60x90 Meka HD',
+              comp_album: 'Album 20x30 (15 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 2 Váy Cưới, 1 Váy Cao cấp',
+              comp_wedding_level: '01 Váy Cao cấp, Áo dài cặp CD&CR. Make up Ăn Hỏi + Cưới (10km free).'
+            },
+            { id: 'lucie6', name: 'LUCIE 6', price: 11000000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường Hà Nội (santorini park, 5graden, smile valley..v.v.)', 'Ngoại cảnh Hà Nội/Uông Bí/Hạ Long.'], 
+              product_details: ['02 Khung 60x90 meka HD', '01 Ảnh để bàn 20x30 ép gỗ', 'Album 20x30 20 Trang', '01 Video slide ảnh 4K', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['02 vest tự chọn', '01 váy cưới tự chọn', '02 Váy cao cấp', 'Makeup làm tóc ngày chụp', '2 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy cao cấp, 01 vest, Nơ/caravat chú rể', 'Áo dài cặp cao cấp CD&CR', 'Áo dài đỏ lẻ nam nữ (tuỳ số lượng)', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh HN/Uông Bí/Hạ Long',
+              comp_frame: '2 Khung 60x90 Meka HD',
+              comp_album: 'Album 20x30 (20 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 1 Váy Cưới, 2 Váy Cao cấp',
+              comp_wedding_level: '01 Váy Cao cấp, Áo dài cặp Cao cấp CD&CR. Make up Ăn Hỏi + Cưới (10km free).'
+            },
+            { id: 'lucie7', name: 'LUCIE 7', price: 12500000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường Hà Nội', 'Ngoại cảnh Hà Nội/Uông Bí/Hạ Long.'], 
+              product_details: ['01 Khung 60x90 meka HD', '01 Khung 60x120 meka HD', '01 Ảnh để bàn 20x30 ép gỗ', 'Bộ khung VIP 12 ảnh (Album 30x30 20 Trang)', '01 Video slide ảnh 4K', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['02 vest tự chọn', '01 váy cưới tự chọn', '02 Váy cao cấp', 'Makeup làm tóc ngày chụp', '2 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy limited', '01 váy phí đi bàn', '01 vest, Nơ/caravat chú rể', 'Áo dài cặp cao cấp CD&CR', 'Áo dài đỡ lẻ nam nữ (tuỳ số lượng)', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh HN/Uông Bí/Hạ Long',
+              comp_frame: '1 Khung 60x90 + 1 Khung 60x120',
+              comp_album: 'Album 30x30 (20 Trang) + Bộ 12 ảnh',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 1 Váy Cưới, 2 Váy Cao cấp',
+              comp_wedding_level: '01 Váy Limited, 01 Váy Phi đi bàn. Áo dài cặp Cao cấp.'
+            },
+            { id: 'lucie8', name: 'LUCIE 8', price: 15500000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường Hà Nội', 'Ngoại cảnh Quảng Ninh/Tam Đảo/Ninh Bình/Đại Lải.'], 
+              product_details: ['02 Ảnh khung 60x90 Gương 4K Khung Kim loại', '02 Ảnh để bàn 20x30 ép gỗ', 'Bộ khung VIP 15 ảnh (Album 30x30 30 Trang)', '01 Video slide ảnh 4K', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['02 vest tự chọn', '02 váy cưới tự chọn', '01 Váy limited', 'Makeup làm tóc ngày chụp', '2 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa và phụ kiện.'], 
+              wedding_service_details: ['01 Váy limited', '01 váy phí đi bàn', '01 vest, Nơ/caravat chú rể', 'Áo dài cặp cao cấp CD&CR', 'Áo dài đỏ lẻ nam nữ (tuỳ số lượng)', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh QN/Tam Đảo/NB/ĐL',
+              comp_frame: '2 Khung 60x90 Gương 4K Khung Kim loại',
+              comp_album: 'Album 30x30 (30 Trang) + Bộ 15 ảnh VIP',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 2 Váy Cưới, 1 Váy Limited',
+              comp_wedding_level: '01 Váy Limited, 01 Váy Phi đi bàn. Áo dài cặp Cao cấp.'
+            },
+            { id: 'lucievip', name: 'LUCIE VIP', price: 26500000, 
+              location_details: ['STUDIO LUCIE', 'Phim trường Hà Nội', 'Ngoại cảnh QN/Tam Đảo/NB/Đại Lải/Cô Tô/Quan Lạn.'], 
+              product_details: ['02 Ảnh khung 60x90 Gương 4K Khung Kim loại', '01 Ảnh khung 60x120 meka HD', '02 Ảnh để bàn 20x30 ép gỗ', 'Bộ khung VIP 15 ảnh (Album 4K 30x30 30 Trang)', '01 Video slide ảnh 4K', '01 Video prewedding', 'Trả toàn bộ file gốc & file chỉnh sửa.'], 
+              shooting_service_details: ['03 vest tự chọn', '02 váy cưới tự chọn', '02 Váy limited', 'Makeup làm tóc ngày chụp', '2 concept tự chọn (áo dài/cổ phục đồ đôi)', 'Hoa tươi và phụ kiện.'], 
+              wedding_service_details: ['01 Váy thiết kế cao cấp theo số đo', '01 váy phí đi bàn', '01 vest, Nơ/caravat chú rể', 'Áo dài cặp cao cấp CD&CR', 'Áo dài đỏ lẻ nam nữ (tuỳ số lượng)', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).'],
+              comp_location: 'Ngoại cảnh QN/TĐ/NB/ĐL/Cô Tô/QL',
+              comp_frame: '2 Khung 60x90 Gương 4K Khung Kim loại + 1 Khung 60x120',
+              comp_album: 'Album 4K 30x30 (30 Trang) + Bộ 15 ảnh VIP',
+              comp_video: 'Video Slide 4K + Video Prewedding',
+              comp_shoot_outfits: '3 Vest, 2 Váy Cưới, 2 Váy Limited',
+              comp_wedding_level: '01 Váy Thiết kế theo số đo. Áo dài cặp Cao cấp.'
+            },
+            { id: 'combo1', name: 'PACKCOMBO 1', price: 11000000, isCombo: true, 
+              location_details: ['STUDIO LUCIE', 'Phim trường HD', 'Ngoại cảnh nội thành HD (Miễn phí xe).'], 
+              product_details: ['Toàn bộ Sản phẩm Ảnh của gói LUCIE 4.'], 
+              shooting_service_details: ['Toàn bộ Dịch vụ Ngày Chụp của gói LUCIE 4.'], 
+              wedding_service_details: [
+                '01 Váy, 01 vest, Áo dài CD, Áo dài đô lẻ nữ Nơ/caravat đội đô lẻ nam, Make up ăn hỏi + cưới (10km free có make up ngoại thành).', 
+                'Bổ sung: 01 máy chụp ảnh lẻ Lễ Ăn hỏi + Lễ Cưới.'
+              ],
+              comp_location: 'Ngoại cảnh Nội thành HD', 
+              comp_frame: '2 Khung 60x90 Tráng Gương',
+              comp_album: 'Album 20x30 (15 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 2 Váy Cưới, 1 Váy Phi',
+              comp_wedding_level: 'Gói LUCIE 4 (Wedding) + 1 máy chụp Lễ Ăn hỏi/Cưới.'
+            },
+            { id: 'combo2', name: 'PACKCOMBO 2', price: 12000000, isCombo: true, 
+              location_details: ['STUDIO LUCIE', 'Phim trường HD', 'Ngoại cảnh Chí Linh/Côn Sơn (Miễn phí xe).'], 
+              product_details: ['Toàn bộ Sản phẩm Ảnh của gói LUCIE 5.'], 
+              shooting_service_details: ['Toàn bộ Dịch vụ Ngày Chụp của gói LUCIE 5.'], 
+              wedding_service_details: [
+                '01 Váy cao cấp, 01 vest, Nơ/caravat chú rể, Áo dài cặp CD&CR, Áo dài đỏ lẻ nam - nữ, Make up ăn hỏi + cưới (10km free có make up ngoại thành).',
+                'Bổ sung: 01 máy chụp ảnh lẻ Lễ Ăn hỏi + Lễ Cưới.'
+              ],
+              comp_location: 'Ngoại cảnh Chí Linh/Côn Sơn', 
+              comp_frame: '2 Khung 60x90 Meka HD',
+              comp_album: 'Album 20x30 (15 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 2 Váy Cưới, 1 Váy Cao cấp',
+              comp_wedding_level: 'Gói LUCIE 5 (Wedding) + 1 máy chụp Lễ Ăn hỏi/Cưới.'
+            },
+            { id: 'combo3', name: 'PACKCOMBO 3', price: 14000000, isCombo: true, 
+              location_details: ['STUDIO LUCIE', 'Phim trường Hà Nội', 'Ngoại cảnh Hà Nội/Uông Bí/Hạ Long.'], 
+              product_details: ['Toàn bộ Sản phẩm Ảnh của gói LUCIE 6.'], 
+              shooting_service_details: ['Toàn bộ Dịch vụ Ngày Chụp của gói LUCIE 6.'], 
+              wedding_service_details: [
+                '01 Váy cao cấp, 01 vest, Nơ/caravat chú rể, Áo dài cặp cao cấp CD&CR', 'Áo dài đỏ lẻ nam nữ (tuỳ số lượng)', 'Make up ăn hỏi + cưới (10km free có make up ngoại thành).',
+                'Bổ sung: 01 máy chụp ảnh lẻ Lễ Ăn hỏi + Lễ Cưới.'
+              ],
+              comp_location: 'Ngoại cảnh HN/Uông Bí/Hạ Long', 
+              comp_frame: '2 Khung 60x90 Meka HD',
+              comp_album: 'Album 20x30 (20 Trang)',
+              comp_video: 'Video Slide 4K',
+              comp_shoot_outfits: '2 Vest, 1 Váy Cưới, 2 Váy Cao cấp',
+              comp_wedding_level: 'Gói LUCIE 6 (Wedding) + 1 máy chụp Lễ Ăn hỏi/Cưới.'
+            }
+        ];
+
+        let priceChartInstance;
+        let currentView = 'view-details';
+        let currentFilter = 'all'; // State for gallery filter
+
+        // --- CORE FUNCTIONS ---
+        
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+        }
+        
+        function switchView(viewId) {
+            currentView = viewId;
+            // Hide all views
+            document.querySelectorAll('.content-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            // Show the selected view
+            const activeView = document.getElementById(viewId);
+            if (activeView) {
+                activeView.classList.add('active');
+            }
+            
+            // Update navigation links
+            document.querySelectorAll('#mainNav .nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-view') === viewId) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Re-render chart if switching to Bảng So Sánh
+            if (viewId === 'view-comparison' && !priceChartInstance) {
+                createPriceChart();
+            }
+            // Populate gallery if switching to Album & Video (SỬA LỖI: đảm bảo hàm này chạy)
+            if (viewId === 'view-gallery') {
+                populateGallery();
+                createGalleryFilters();
+            }
+            
+            // Scroll to the top of the content area
+            document.querySelector('main').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- UI POPULATION FUNCTIONS ---
+        
+        // Tạo nút chọn gói
+        function populatePackageButtons() {
+            const lucieContainer = document.getElementById('packageButtonsLucie');
+            const comboContainer = document.getElementById('packageButtonsCombo');
+            
+            let lucieHtml = '';
+            let comboHtml = '';
+            
+            packageData.forEach(pkg => {
+                const buttonHtml = `
+                    <button 
+                        class="package-selector-button p-2 px-4 rounded-full text-sm hover:shadow-md"
+                        data-package-id="${pkg.id}"
+                        onclick="handlePackageButtonClick('${pkg.id}')">
+                        ${pkg.name} (${formatCurrency(pkg.price)})
+                    </button>
+                `;
+                if (pkg.isCombo) {
+                    comboHtml += buttonHtml;
+                } else {
+                    lucieHtml += buttonHtml;
+                }
+            });
+            
+            lucieContainer.innerHTML = lucieHtml;
+            comboContainer.innerHTML = comboHtml;
+            
+            // Set default active state
+            handlePackageButtonClick('lucie4');
+        }
+
+        // Xử lý sự kiện khi click nút chọn gói
+        function handlePackageButtonClick(packageId) {
+            updateDetailPanel(packageId);
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.package-selector-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to the clicked button
+            const activeBtn = document.querySelector(`.package-selector-button[data-package-id="${packageId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+        }
+        
+        // Hàm chuyển đổi tên file thành chú thích
+        function getCaption(url) {
+            try {
+                // Lấy phần cuối cùng của URL (tên file)
+                const parts = url.split('/');
+                let filename = parts[parts.length - 1];
+                
+                // Loại bỏ phần mở rộng (.jpg, .png...)
+                filename = filename.split('.')[0];
+                
+                // Thay thế các ký tự đặc biệt bằng khoảng trắng và viết hoa chữ cái đầu
+                let caption = filename.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/(\d+)/g, ' $1').trim();
+                
+                // Viết hoa chữ cái đầu tiên
+                return caption.charAt(0).toUpperCase() + caption.slice(1);
+            } catch (e) {
+                return "Ảnh chi tiết";
+            }
+        }
+
+        // NEW: Hàm lấy tên danh mục từ URL và chuẩn hóa
+        function getCategory(url) {
+            try {
+                const parts = url.split('/');
+                let filename = parts[parts.length - 1];
+                let categoryCode = filename.split(/(\d+)/)[0]; // Lấy phần chữ đầu tiên (VD: CHILINH, AODAI)
+                categoryCode = categoryCode.toUpperCase();
+                
+                // Ánh xạ tên danh mục thân thiện
+                const categoryMap = {
+                    'AODAI': 'Áo Dài',
+                    'CHILINH': 'Chí Linh/Côn Sơn',
+                    'CONCEPT': 'Concept Studio',
+                    'DANGOAI': 'Ngoại Cảnh',
+                    'HDCAFE': 'Cafe/Nội Thành',
+                    'HDNGOAITROI': 'Hà Nội Ngoại Thành',
+                    'LUX': 'Sang Trọng (Luxury)',
+                    'PHIMTRUONGHD': 'Phim Trường HD',
+                    'STUDIOS': 'Studio Tổng Hợp'
+                };
+
+                return categoryMap[categoryCode] || 'Chủ đề khác';
+            } catch (e) {
+                return 'Chủ đề khác';
+            }
+        }
+
+        // NEW: Tạo các nút filter
+        function createGalleryFilters() {
+            const container = document.getElementById('galleryFilters');
+            const categories = new Set();
+            
+            // Lấy tất cả danh mục từ ảnh Pre-Wedding
+            preweddingImageUrls.forEach(url => {
+                categories.add(getCategory(url));
+            });
+
+            // Tạo nút "Tất cả"
+            let filterHtml = `<button class="gallery-filter-button active" onclick="setGalleryFilter('all')">Tất cả (${preweddingImageUrls.length})</button>`;
+            
+            // Tạo các nút danh mục
+            categories.forEach(cat => {
+                const count = preweddingImageUrls.filter(url => getCategory(url) === cat).length;
+                filterHtml += `<button class="gallery-filter-button" onclick="setGalleryFilter('${cat}')">${cat} (${count})</button>`;
+            });
+
+            container.innerHTML = filterHtml;
+            setGalleryFilter(currentFilter); // Áp dụng filter hiện tại
+        }
+
+        // NEW: Thiết lập filter và gọi populateGallery
+        function setGalleryFilter(filter) {
+            currentFilter = filter;
+            
+            // Cập nhật trạng thái nút
+            document.querySelectorAll('#galleryFilters .gallery-filter-button').forEach(btn => {
+                btn.classList.remove('active');
+                // Sửa lỗi logic: kiểm tra nội dung text của button có chứa filter hay không
+                if (btn.textContent.includes(filter) || (filter === 'all' && btn.textContent.includes('Tất cả'))) {
+                     btn.classList.add('active');
+                }
+            });
+
+            populateGallery();
+        }
+
+
+        // SỬA LỖI: Cải tiến hàm populateGallery để lọc ảnh
+        function populateGallery() {
+            const preweddingContainer = document.getElementById('prewedding-gallery');
+            const eventContainer = document.getElementById('event-gallery');
+            
+            if (!preweddingContainer || !eventContainer) return;
+            
+            // Lọc ảnh dựa trên filter hiện tại
+            const filteredUrls = preweddingImageUrls.filter(url => 
+                currentFilter === 'all' || getCategory(url) === currentFilter
+            );
+
+            // Hàm tạo HTML cho ảnh (thêm onclick để mở modal)
+            const createImageHtml = (url) => {
+                const caption = getCaption(url);
+                return `
+                    <div class="h-40 rounded-lg shadow-inner overflow-hidden cursor-pointer" 
+                         onclick="openModal('${url}', '${caption}')"
+                         title="${caption}">
+                        <img src="${url}" alt="${caption}" class="w-full h-full object-cover transition duration-300 hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/400x300/F8F7F4/B8860B?text=Loi+Anh';" />
+                    </div>
+                `;
+            };
+            
+            // Xử lý Pre-Wedding Gallery
+            if (filteredUrls.length > 0) {
+                preweddingContainer.innerHTML = filteredUrls.map(createImageHtml).join('');
+            } else {
+                preweddingContainer.innerHTML = '<p class="text-center text-gray-500 col-span-full py-5">Không tìm thấy ảnh nào trong danh mục này.</p>';
+            }
+
+            // Xử lý Event Gallery
+            if (eventImageUrls && eventImageUrls.length > 0) {
+                eventContainer.innerHTML = eventImageUrls.map(createImageHtml).join('');
+            } else {
+                // Hiển thị thông báo khi không có ảnh Phóng sự
+                eventContainer.innerHTML = '<p class="text-center text-gray-500 col-span-full py-5">Album Phóng Sự Cưới sẽ được cập nhật sau.</p>';
+            }
+        }
+
+        // Lightbox/Modal Functions
+        function openModal(src, caption) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('modalCaption').textContent = caption;
+            document.getElementById('imageModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Ngăn cuộn trang
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.style.overflow = 'auto'; // Cho phép cuộn lại
+        }
+
+
+        function populateSelectors() {
+            const selectors = [document.getElementById('packageSelect1'), document.getElementById('packageSelect2'), document.getElementById('packageSelect3')];
+            
+            const optionsHtml = packageData.map(pkg => 
+                `<option value="${pkg.id}">${pkg.name} - ${formatCurrency(pkg.price)}</option>`
+            ).join('');
+
+            selectors.forEach(selector => {
+                selector.innerHTML = '<option value="">-- Chọn Gói --</option>' + optionsHtml;
+                selector.addEventListener('change', updateComparisonTable);
+            });
+            
+            // Set default selections
+            selectors[0].value = 'lucie4';
+            selectors[1].value = 'lucie6';
+            selectors[2].value = 'lucie8';
+        }
+
+        function updateComparisonTable() {
+            const selectedIds = [
+                document.getElementById('packageSelect1').value,
+                document.getElementById('packageSelect2').value,
+                document.getElementById('packageSelect3').value
+            ];
+
+            const selectedPackages = selectedIds.map(id => packageData.find(pkg => pkg.id === id)).filter(p => p);
+            const tableContainer = document.getElementById('comparisonTable');
+            
+            if (selectedPackages.length === 0) {
+                 tableContainer.innerHTML = `<p class="text-center text-gray-500 py-5">Hãy chọn các gói từ danh sách thả xuống để bắt đầu so sánh.</p>`;
+                 return;
+            }
+
+            let headerHtml = '<th class="p-3 text-sm font-semibold text-left text-gray-600 border-b">Tiêu Chí</th>';
+            selectedPackages.forEach(pkg => {
+                headerHtml += `<th class="p-3 text-sm font-bold text-left text-brand-dark border-b bg-gray-50">${pkg.name}</th>`;
+            });
+
+            let bodyHtml = '';
+            // UPDATED granular features for comparison table
+            const features = [
+                { key: 'price', label: 'Giá Gói' },
+                { key: 'comp_location', label: 'Địa Điểm Chụp (Phạm vi)' },
+                { key: 'comp_frame', label: 'Ảnh Khung Lớn' },
+                { key: 'comp_album', label: 'Album Ảnh (Size/Trang)' },
+                { key: 'comp_video', label: 'Video (Loại)' },
+                { key: 'comp_shoot_outfits', label: 'Trang Phục Ngày Chụp (SL/Cấp độ)' },
+                { key: 'comp_wedding_level', label: 'Dịch Vụ Ngày Cưới' }
+            ];
+
+            features.forEach(feature => {
+                bodyHtml += `<tr><td class="p-3 text-sm font-medium text-gray-700 border-b">${feature.label}</td>`;
+                selectedPackages.forEach(pkg => {
+                    let value = pkg[feature.key];
+                    if (feature.key === 'price') value = `<span class="font-bold text-gray-900">${formatCurrency(value)}</span>`;
+                    // For comparison table, we use simple strings, not bullet points
+                    bodyHtml += `<td class="p-3 text-sm text-gray-600 border-b align-top">${value}</td>`;
+                });
+                bodyHtml += `</tr>`;
+            });
+            
+            tableContainer.innerHTML = `
+                <table class="w-full">
+                    <thead><tr>${headerHtml}</tr></thead>
+                    <tbody>${bodyHtml}</tbody>
+                </table>
+            `;
+        }
+        
+        function updateDetailPanel(packageId) {
+            const pkg = packageData.find(p => p.id === packageId);
+            const panel = document.getElementById('packageDetailPanel');
+            if (!pkg) {
+                panel.innerHTML = `<p class="text-center text-gray-500 py-10">Không tìm thấy thông tin gói.</p>`;
+                return;
+            }
+            
+            // Grouped details
+            const groupedDetails = [
+                { title: 'Địa Điểm Chụp', items: pkg.location_details },
+                { title: 'Sản Phẩm Ảnh (Bao gồm file gốc & chỉnh sửa)', items: pkg.product_details },
+                { title: 'Dịch Vụ Ngày Chụp (Pre-Wedding)', items: pkg.shooting_service_details },
+                { title: 'Dịch Vụ Ngày Cưới & Lễ Hỏi', items: pkg.wedding_service_details }
+            ];
+
+            let detailsHtml = '';
+            groupedDetails.forEach(group => {
+                if (group.items && group.items.length > 0) {
+                    detailsHtml += `
+                        <div class="mb-6">
+                            <h5 class="font-bold text-lg mb-3 text-accent border-b border-gray-100 pb-1">${group.title}</h5>
+                            <ul class="space-y-2 text-gray-700 text-sm">
+                                ${group.items.map(item => `
+                                    <li class="feature-item">
+                                        <svg class="w-5 h-5 text-accent mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                        <span>${item}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            });
+
+            panel.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4">
+                    <div>
+                        <h4 class="text-3xl font-bold text-brand-dark">${pkg.name}</h4>
+                        <p class="text-gray-500 font-medium">${pkg.location_details.join(' | ')}</p>
+                    </div>
+                    <p class="text-4xl font-extrabold text-accent mt-2 md:mt-0">${formatCurrency(pkg.price)}</p>
+                </div>
+                <div>
+                    ${detailsHtml}
+                </div>
+            `;
+        }
+
+        function createPriceChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const preweddingData = packageData.filter(p => !p.isCombo);
+            
+            if (priceChartInstance) {
+                priceChartInstance.destroy();
+            }
+
+            priceChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: preweddingData.map(p => p.name),
+                    datasets: [{
+                        label: 'Giá Gói (VND)',
+                        data: preweddingData.map(p => p.price),
+                        backgroundColor: 'rgba(31, 41, 55, 0.8)', /* Dark color for bars */
+                        borderColor: 'rgba(31, 41, 55, 1)',
+                        borderWidth: 1,
+                        borderRadius: 10,
+                        hoverBackgroundColor: 'rgba(184, 134, 11, 1)' /* Brass/Gold Accent on hover */
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return value / 1000000 + ' Tr';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 12, weight: 'bold' },
+                                color: '#434240'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1F2937',
+                            titleFont: { weight: 'bold' },
+                            bodyFont: { weight: 'normal' },
+                            callbacks: {
+                                label: function(context) {
+                                    return `Giá: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const dataIndex = elements[0].index;
+                            const packageId = preweddingData[dataIndex].id;
+                            updateDetailPanel(packageId);
+                            switchView('view-details'); // Switch to details tab on click
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INIT & UTILITIES ---
+
+        // Function to check if element is in viewport (kept for general scroll reveal)
+        function isElementInViewport(el) {
+            const rect = el.getBoundingClientRect();
+            return (
+                rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.bottom >= 0 &&
+                rect.left <= (window.innerWidth || document.documentElement.clientWidth) &&
+                rect.right >= 0
+            );
+        }
+
+        // Scroll Reveal Logic
+        function handleScrollReveal() {
+            // SỬA LỖI: Kiểm tra el trước khi gọi classList
+            document.querySelectorAll('.scroll-reveal-element:not(.visible)').forEach(el => {
+                if (el && isElementInViewport(el)) {
+                    el.classList.add('visible');
+                }
+            });
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initial setup
+            populateSelectors();
+            updateComparisonTable();
+            populatePackageButtons(); // NEW: Create buttons
+            populateGallery(); // Sửa lỗi: Gọi hàm gallery ngay sau DOMContentLoaded
+            createGalleryFilters(); // NEW: Create gallery filters
+            
+            // Default to 'Chi Tiết Gói' and display LUCIE 4
+            // Note: handlePackageButtonClick('lucie4') is called inside populatePackageButtons
+            switchView('view-details');
+            
+            // Activate initial scroll reveal elements
+            document.querySelectorAll('.scroll-reveal-element').forEach(el => {
+                el.classList.add('visible');
+            });
+            
+            // Attach scroll event listener for continuous reveal
+            window.addEventListener('scroll', handleScrollReveal);
+            handleScrollReveal(); // Run once on load for elements already in view
+        });
+
+    </script>
+</body>
+</html>
