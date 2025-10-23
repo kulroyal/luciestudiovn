@@ -282,9 +282,46 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Mobile Specific Styles */
+        #mobileMenuButton {
+            display: block; /* Hiển thị nút Menu trên Mobile */
+            /* Tailwind equivalent of display: block only on mobile: block */
+        }
+        @media (min-width: 768px) {
+            #mobileMenuButton {
+                display: none;
+            }
+        }
+        #mobileMenuOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1002;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #mobileMenuOverlay.active {
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body class="antialiased theme-default">
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" onclick="toggleMobileMenu(false)">
+        <span class="absolute top-4 right-6 text-white text-4xl cursor-pointer hover:text-accent">&times;</span>
+        <nav id="mobileNavContent" class="flex flex-col space-y-8 text-center text-white text-2xl font-medium">
+            <!-- Navigation links cloned here by JS -->
+        </nav>
+    </div>
 
     <!-- Modal (Lightbox) Structure -->
     <div id="imageModal" onclick="closeModal()">
@@ -311,6 +348,8 @@
     <header class="bg-card shadow-custom sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <h1 class="text-4xl font-extrabold text-brand-dark tracking-wide transition duration-300 hover:text-accent" style="font-family: 'Playfair Display', serif;">LUCIE STUDIO</h1>
+            
+            <!-- Desktop Navigation -->
             <nav id="mainNav" class="hidden md:flex space-x-8 text-gray-700 font-medium">
                 <a href="#" data-view="view-details" class="nav-link transition duration-150 active" onclick="switchView('view-details')">Chi Tiết Gói</a>
                 <a href="#" data-view="view-comparison" class="nav-link transition duration-150" onclick="switchView('view-comparison')">Bảng So Sánh</a>
@@ -319,7 +358,12 @@
                 <a href="#" data-view="view-printing" class="nav-link transition duration-150" onclick="switchView('view-printing')">Báo Giá In Ảnh</a>
                 <a href="#contact" data-view="view-contact" class="nav-link transition duration-150">Liên Hệ</a>
             </nav>
-            <!-- Mobile Menu Placeholder -->
+            
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuButton" class="text-2xl text-brand-dark md:hidden" onclick="toggleMobileMenu(true)">
+                <!-- Hamburger Icon (Unicode) -->
+                &#9776; 
+            </button>
         </div>
     </header>
 
@@ -796,7 +840,7 @@
               product_details: ['Toàn bộ Sản phẩm Ảnh của gói LUCIE 4.'], 
               shooting_service_details: ['Toàn bộ Dịch vụ Ngày Chụp của gói LUCIE 4.'], 
               wedding_service_details: [
-                '01 Váy, 01 vest, Áo dài CD, Áo dài đô lẻ nữ Nơ/caravat đội đô lẻ nam, Make up ăn hỏi + cưới (10km free có make up ngoại thành).', 
+                '01 Váy, 01 vest', 'Áo dài CD', 'Áo dài đô lẻ nữ Nơ/caravat đội đô lẻ nam, Make up ăn hỏi + cưới (10km free có make up ngoại thành).', 
                 'Bổ sung: 01 máy chụp ảnh lẻ Lễ Ăn hỏi + Lễ Cưới.'
               ],
               comp_location: 'Ngoại cảnh Nội thành HD', 
@@ -1027,6 +1071,35 @@
 
         function formatCurrency(value) {
             return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+        }
+        
+        // NEW: Mobile Menu Toggle Function
+        function toggleMobileMenu(show) {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            if (show) {
+                // Clone desktop links to mobile menu
+                const desktopNav = document.getElementById('mainNav');
+                const mobileNavContent = document.getElementById('mobileNavContent');
+                mobileNavContent.innerHTML = '';
+                
+                desktopNav.querySelectorAll('.nav-link').forEach(link => {
+                    const mobileLink = link.cloneNode(true);
+                    mobileLink.classList.remove('active', 'hidden', 'md:flex', 'space-x-8');
+                    mobileLink.classList.add('py-3', 'hover:text-accent');
+                    mobileLink.onclick = () => {
+                        // Switch view and close menu
+                        switchView(link.getAttribute('data-view'));
+                        toggleMobileMenu(false);
+                    };
+                    mobileNavContent.appendChild(mobileLink);
+                });
+                
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                overlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
         }
         
         function switchView(viewId) {
@@ -1496,8 +1569,9 @@
 
             slideshowContainer.innerHTML = selectedSlides.map((url, index) => {
                 const isActive = index === 0 ? 'active' : '';
-                // Sử dụng lazy loading cho ảnh slideshow (không cần thiết trong môi trường này nhưng là Best Practice)
-                return `<img class="slideshow-image ${isActive}" src="${url}" alt="Ảnh Phóng Sự Cưới" loading="lazy">`;
+                // Sửa lỗi: Tăng tốc độ load bằng cách chỉ pre-load ảnh đầu tiên
+                const loadingAttr = index === 0 ? 'eager' : 'lazy';
+                return `<img class="slideshow-image ${isActive}" src="${url}" alt="Ảnh Phóng Sự Cưới" loading="${loadingAttr}">`;
             }).join('');
             
             // Bắt đầu trình chiếu từ ảnh thứ 2 (để ảnh 1 có thời gian hiển thị ban đầu)
@@ -1524,6 +1598,35 @@
                     el.classList.add('visible');
                 }
             });
+        }
+        
+        // NEW: Mobile Menu Toggle Function
+        function toggleMobileMenu(show) {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            if (show) {
+                // Clone desktop links to mobile menu
+                const desktopNav = document.getElementById('mainNav');
+                const mobileNavContent = document.getElementById('mobileNavContent');
+                mobileNavContent.innerHTML = '';
+                
+                desktopNav.querySelectorAll('.nav-link').forEach(link => {
+                    const mobileLink = link.cloneNode(true);
+                    mobileLink.classList.remove('active', 'hidden', 'md:flex', 'space-x-8');
+                    mobileLink.classList.add('py-3', 'hover:text-accent');
+                    mobileLink.onclick = () => {
+                        // Switch view and close menu
+                        switchView(link.getAttribute('data-view'));
+                        toggleMobileMenu(false);
+                    };
+                    mobileNavContent.appendChild(mobileLink);
+                });
+                
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                overlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
         }
         
         // NEW: Theme switching logic
