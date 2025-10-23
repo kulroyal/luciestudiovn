@@ -19,23 +19,60 @@
     <style>
         body {
             font-family: 'Be Vietnam Pro', sans-serif;
-            background-color: #F8F7F4; /* Light Cream Background */
-            color: #1F2937; /* Dark text */
             overflow-x: hidden;
+            transition: background-color 0.5s, color 0.5s;
         }
         h1, h2, h3, h4 {
             font-family: 'Playfair Display', serif;
-            color: #1F2937;
+            transition: color 0.5s;
         }
-        .text-brand-dark { color: #1F2937; }
-        .bg-brand-dark { background-color: #1F2937; }
-        .text-accent { color: #B8860B; } /* Dark Gold/Brass Accent */
-        .bg-accent { background-color: #B8860B; }
-        .border-accent { border-color: #B8860B; }
-        .bg-card { background-color: #FFFFFF; }
-        /* Tinh chỉnh đổ bóng để trông tinh tế hơn */
+        .text-brand-dark { transition: color 0.5s; }
+        .bg-brand-dark { transition: background-color 0.5s; }
+        .text-accent { transition: color 0.5s; }
+        .bg-accent { transition: background-color 0.5s; }
+        .border-accent { transition: border-color 0.5s; }
+        .bg-card { transition: background-color 0.5s; }
         .shadow-custom { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); } 
         .shadow-custom-hover:hover { box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); transition: box-shadow 0.3s ease-in-out; }
+
+        /* --- THEME DEFINITIONS (Màu chủ đạo) --- */
+        /* Mặc định: Luxury/High-Contrast */
+        body.theme-default { background-color: #F8F7F4; color: #1F2937; }
+        .theme-default .text-brand-dark { color: #1F2937; }
+        .theme-default .bg-brand-dark { background-color: #1F2937; }
+        .theme-default .text-accent { color: #B8860B; }
+        .theme-default .bg-accent { background-color: #B8860B; }
+        .theme-default .border-accent { border-color: #B8860B; }
+        .theme-default .bg-card { background-color: #FFFFFF; }
+
+        /* Chủ đề 1: Tươi Sáng (Bright & Minimal - Teal Accent) */
+        body.theme-bright { background-color: #FFFFFF; color: #111827; }
+        .theme-bright .text-brand-dark { color: #111827; }
+        .theme-bright .bg-brand-dark { background-color: #111827; }
+        .theme-bright .text-accent { color: #008080; } /* Teal */
+        .theme-bright .bg-accent { background-color: #008080; }
+        .theme-bright .border-accent { border-color: #008080; }
+        .theme-bright .bg-card { background-color: #F9FAFB; }
+
+        /* Chủ đề 2: Lãng Mạn (Romantic/Warm - Burgundy Accent) */
+        body.theme-romantic { background-color: #FDF5E6; color: #4B0000; } /* Cream/Beige */
+        .theme-romantic .text-brand-dark { color: #4B0000; } /* Dark Red */
+        .theme-romantic .bg-brand-dark { background-color: #4B0000; }
+        .theme-romantic .text-accent { color: #800020; } /* Burgundy */
+        .theme-romantic .bg-accent { background-color: #800020; }
+        .theme-romantic .border-accent { border-color: #800020; }
+        .theme-romantic .bg-card { background-color: #FFFFFF; }
+
+        /* Chủ đề 3: Cổ Điển (Classic Blue - Navy Accent) */
+        body.theme-classic { background-color: #F4F7F9; color: #111827; }
+        .theme-classic .text-brand-dark { color: #1F2937; }
+        .theme-classic .bg-brand-dark { background-color: #1F2937; }
+        .theme-classic .text-accent { color: #003366; } /* Navy */
+        .theme-classic .bg-accent { background-color: #003366; }
+        .theme-classic .border-accent { border-color: #003366; }
+        .theme-classic .bg-card { background-color: #FFFFFF; }
+        /* --- END THEME DEFINITIONS --- */
+
 
         /* Chart container styling as per requirements */
         .chart-container {
@@ -72,7 +109,7 @@
             width: 8px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #B8860B;
+            background: var(--accent-color, #B8860B);
             border-radius: 10px;
         }
         ::-webkit-scrollbar-track {
@@ -80,8 +117,8 @@
         }
         /* Tab specific styling */
         .nav-link.active {
-            color: #1F2937;
-            border-bottom: 3px solid #B8860B; /* Accent line for active tab */
+            color: var(--brand-dark-color, #1F2937);
+            border-bottom: 3px solid var(--accent-color, #B8860B); /* Accent line for active tab */
             padding-bottom: 4px;
             font-weight: 600;
         }
@@ -116,19 +153,14 @@
         }
         /* Style cho nút bấm liên hệ nổi bật */
         .btn-accent {
-            background-color: #B8860B;
-            color: white;
             padding: 12px 32px;
             border-radius: 9999px;
             font-weight: 700;
-            box-shadow: 0 4px 10px rgba(184, 134, 11, 0.4);
             transition: all 0.3s;
         }
         .btn-accent:hover {
-            background-color: #a37b0a;
-            box-shadow: 0 6px 15px rgba(184, 134, 11, 0.6);
+            opacity: 0.9;
         }
-
         /* Nút chọn gói chuyên nghiệp */
         .package-selector-button {
             transition: all 0.2s;
@@ -138,10 +170,8 @@
             min-width: 100px; /* Giữ độ rộng tối thiểu */
         }
         .package-selector-button.active {
-            background-color: #B8860B;
             color: white;
-            border-color: #B8860B;
-            box-shadow: 0 2px 5px rgba(184, 134, 11, 0.3);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         .package-selector-button:hover:not(.active) {
             background-color: #F3F4F6;
@@ -193,7 +223,7 @@
             transition: color 0.2s;
         }
         #closeModal:hover {
-            color: #B8860B;
+            color: var(--accent-color, #B8860B);
         }
 
         /* Gallery Filter Buttons */
@@ -207,7 +237,6 @@
             cursor: pointer;
         }
         .gallery-filter-button.active {
-            background-color: #B8860B;
             color: white;
             font-weight: 600;
         }
@@ -242,7 +271,7 @@
         /* Loader Style */
         .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #B8860B;
+            border-top: 4px solid var(--accent-color, #B8860B);
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -255,7 +284,7 @@
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased theme-default">
 
     <!-- Modal (Lightbox) Structure -->
     <div id="imageModal" onclick="closeModal()">
@@ -297,6 +326,15 @@
     <!-- Main Application Body -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
+        <!-- NEW: Theme Selector -->
+        <div class="mb-8 p-3 bg-card rounded-xl shadow-custom flex flex-wrap items-center justify-center gap-3">
+            <span class="text-sm font-medium text-gray-700">Chọn Chủ Đề:</span>
+            <button class="text-xs py-1 px-3 rounded-full border border-gray-300 transition duration-150 hover:shadow-md" onclick="setTheme('theme-default')" data-theme-name="default">👑 Sang Trọng</button>
+            <button class="text-xs py-1 px-3 rounded-full border border-gray-300 transition duration-150 hover:shadow-md" onclick="setTheme('theme-bright')" data-theme-name="bright">☀️ Tươi Sáng</button>
+            <button class="text-xs py-1 px-3 rounded-full border border-gray-300 transition duration-150 hover:shadow-md" onclick="setTheme('theme-romantic')" data-theme-name="romantic">💖 Lãng Mạn</button>
+            <button class="text-xs py-1 px-3 rounded-full border border-gray-300 transition duration-150 hover:shadow-md" onclick="setTheme('theme-classic')" data-theme-name="classic">📘 Cổ Điển</button>
+        </div>
+
         <!-- Introduction Section (Hero) -->
         <section class="text-center mb-16 scroll-reveal-element">
             <h2 class="text-5xl md:text-6xl font-extrabold text-brand-dark mb-4">Lựa Chọn Sự Sang Trọng & Hoàn Hảo</h2>
@@ -549,7 +587,7 @@
                 <a href="tel:0826226888" class="btn-accent transition duration-300">
                     GỌI NGAY: 0826226888
                 </a>
-                <a href="#" class="w-full sm:w-auto bg-white text-brand-dark font-bold py-3 px-8 rounded-full shadow-md hover:bg-gray-100 transition duration-150">
+                <a href="https://m.me/luciestudio.vn" target="_blank" class="w-full sm:w-auto bg-white text-brand-dark font-bold py-3 px-8 rounded-full shadow-md hover:bg-gray-100 transition duration-150">
                     NHẮN TIN TƯ VẤN
                 </a>
             </div>
@@ -1488,6 +1526,60 @@
             });
         }
         
+        // NEW: Theme switching logic
+        function setTheme(themeName) {
+            document.body.className = `antialiased ${themeName}`;
+            
+            // Cập nhật biến CSS tùy chỉnh
+            let accentColor;
+            let brandDarkColor;
+
+            switch (themeName) {
+                case 'theme-bright':
+                    accentColor = '#008080'; // Teal
+                    brandDarkColor = '#111827';
+                    break;
+                case 'theme-romantic':
+                    accentColor = '#800020'; // Burgundy
+                    brandDarkColor = '#4B0000';
+                    break;
+                case 'theme-classic':
+                    accentColor = '#003366'; // Navy
+                    brandDarkColor = '#1F2937';
+                    break;
+                default: // theme-default (Luxury/Gold)
+                    accentColor = '#B8860B';
+                    brandDarkColor = '#1F2937';
+            }
+            
+            // Áp dụng biến CSS cho các thành phần tĩnh (nếu cần)
+            document.documentElement.style.setProperty('--accent-color', accentColor);
+            document.documentElement.style.setProperty('--brand-dark-color', brandDarkColor);
+
+            // Cập nhật màu cho các nút Gallery và Package Selector
+            updateThemeSpecificElements(accentColor, brandDarkColor);
+            
+            // Khởi tạo lại Chart nếu đang ở view comparison (để cập nhật màu bar)
+            if (currentView === 'view-comparison' && priceChartInstance) {
+                createPriceChart();
+            }
+        }
+        
+        function updateThemeSpecificElements(accentColor, brandDarkColor) {
+            // Cập nhật màu cho các nút bấm
+            document.querySelectorAll('.btn-accent').forEach(btn => {
+                btn.style.backgroundColor = accentColor;
+            });
+            document.querySelectorAll('.package-selector-button.active').forEach(btn => {
+                 btn.style.backgroundColor = accentColor;
+                 btn.style.borderColor = accentColor;
+            });
+             document.querySelectorAll('.gallery-filter-button.active').forEach(btn => {
+                 btn.style.backgroundColor = accentColor;
+            });
+        }
+
+
         window.addEventListener('DOMContentLoaded', () => {
             // Initial setup
             populateSelectors();
@@ -1500,6 +1592,9 @@
             // Default to 'Chi Tiết Gói' and display LUCIE 4
             // Note: handlePackageButtonClick('lucie4') is called inside populatePackageButtons
             switchView('view-details');
+            
+            // Thiết lập chủ đề mặc định ban đầu
+            setTheme('theme-default'); 
             
             // Activate initial scroll reveal elements
             document.querySelectorAll('.scroll-reveal-element').forEach(el => {
